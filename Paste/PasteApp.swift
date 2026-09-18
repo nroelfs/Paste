@@ -11,22 +11,32 @@ import SwiftData
 @main
 struct PasteApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+           let schema = Schema([
+               Clipboard.self
+           ])
 
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+           let modelConfiguration = ModelConfiguration(
+               schema: schema,
+               isStoredInMemoryOnly: false
+           )
 
+           do {
+               return try ModelContainer(
+                   for: schema,
+                   configurations: [modelConfiguration]
+               )
+           } catch {
+               fatalError("Could not create ModelContainer: \(error)")
+           }
+       }()
+    var capacity : Int = 10;
+    
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .modelContainer(sharedModelContainer)
-    }
-}
+           WindowGroup {
+               ClipboardHistory(
+                   clipboard: Clipboard.create(capacity: 10)
+               )
+           }
+           .modelContainer(sharedModelContainer)
+       }
+   }
