@@ -6,12 +6,14 @@
 //
 
 import SwiftData
+import Foundation
 
 @Model
 final class Clipboard {
     private(set) var items: [ClipboardItem] = []
     private(set) var capacity: Int
-
+    private(set) var activeItemId: UUID? = nil
+    
     init(capacity: Int) {
         self.capacity = capacity
     }
@@ -22,10 +24,7 @@ final class Clipboard {
 
     func push(_ item: ClipboardItem, into context: ModelContext) {
         
-        if !isEmpty {
-            toggleActive()
-        }
-            
+        activeItemId = item.id
         items.insert(item, at: 0)
 
         if items.count > capacity {
@@ -41,8 +40,8 @@ final class Clipboard {
         return items.removeFirst()
     }
 
-    var top: ClipboardItem? {
-        items.first
+    var active: ClipboardItem? {
+        items.first(where: {$0.id == activeItemId})
     }
 
     var count: Int {
@@ -57,11 +56,8 @@ final class Clipboard {
         items.isEmpty
     }
     
-    private func toggleActive() {
-        items.forEach{ item in
-            if item.isActive {
-                item.toggleActive()
-            }
-        }
+    func activate(id: UUID) {
+        guard items.contains(where: { $0.id == id }) else { return }
+        activeItemId = id
     }
 }

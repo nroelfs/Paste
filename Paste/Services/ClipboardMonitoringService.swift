@@ -24,7 +24,10 @@ final class ClipboardMonitoringService {
         guard monitoringTask == nil else { return }
 
         self.onClipboardChange = onClipboardChange
-
+        
+        
+        notify() // setzt den aktuellen eintrag aus der zwischen ablage ein
+        
         monitoringTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(250))
@@ -47,6 +50,10 @@ final class ClipboardMonitoringService {
             return
         }
 
+        notify()
+    }
+    
+    private func notify(){
         lastChangeCount = pasteboard.changeCount
 
         guard let value = pasteboard.string(forType: .string) else {

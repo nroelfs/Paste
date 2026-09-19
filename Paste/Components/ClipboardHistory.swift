@@ -10,6 +10,14 @@ import SwiftData
 struct ClipboardHistory: View {
     @Environment(\.modelContext) private var modelContext
     let clipboard: Clipboard
+    
+    private func selectItem(_ id: UUID){
+        print(id)
+        clipboard.activate(id: id)
+        
+    }
+    
+    
     var body: some View {
         ZStack{
             if clipboard.isEmpty {
@@ -29,9 +37,13 @@ struct ClipboardHistory: View {
 
             } else {
                 List {
-                    ForEach(clipboard.items) { item in
-                       ClipboardItemRow(item: item)
-
+                    ForEach(clipboard.items, id: \.id) { item in
+                        ClipboardItemRow(item: item,
+                                         selectAction: selectItem,
+                                         active: item.id == clipboard.activeItemId)
+                            .contextMenu {
+                                Text("huhu")
+                            }
                     }
                 }
             }

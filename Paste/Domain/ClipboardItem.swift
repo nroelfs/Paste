@@ -10,14 +10,12 @@ import Foundation
 
 @Model
 final class ClipboardItem : Identifiable {
-    var id = UUID()
-    var value: String
-    var isActive: Bool = false
-    var createdAt: Date
+    private(set) var id = UUID()
+    private(set) var value: String
+    private(set) var createdAt: Date
     
     private init(value: String){
         self.value = value
-        self.isActive = true
         self.createdAt = Date()
     }
     
@@ -25,9 +23,6 @@ final class ClipboardItem : Identifiable {
         ClipboardItem(value: input)
     }
     
-    func toggleActive() {
-        isActive = !isActive
-    }
     
 }
 
