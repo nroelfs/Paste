@@ -11,7 +11,7 @@ struct ClipboardHistory: View {
     @Environment(\.modelContext) private var modelContext
     let clipboard: Clipboard
     var body: some View {
-        HStack{
+        ZStack{
             if clipboard.isEmpty {
                 HStack{
                     VStack(spacing: 12) {

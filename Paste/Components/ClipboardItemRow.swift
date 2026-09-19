@@ -12,16 +12,16 @@ struct ClipboardItemRow: View {
     let item: ClipboardItem
 
     var body: some View {
-        VStack{
+        VStack(alignment: .leading){
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.value)
                     .foregroundColor(.primary)
                     .font(.system(size: 14))
                     .bold(item.isActive)
-
             }
         }
-        .frame(height: 35)
+        .padding()
+        .frame(width: 350, height: 35, alignment: .leading)
     }
 }
 
