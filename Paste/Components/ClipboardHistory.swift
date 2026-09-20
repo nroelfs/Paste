@@ -11,6 +11,8 @@ struct ClipboardHistory: View {
     @Environment(\.modelContext) private var modelContext
     let store : ClipboardStore
     let clipboardMonitoringService : ClipboardMonitoringService = ClipboardMonitoringService()
+    let hideAction : () -> Void
+    
     
     private func selectItem(_ id: UUID) {
         let oldActiveId = store.clipboard.activeItemId
@@ -23,6 +25,7 @@ struct ClipboardHistory: View {
         }
 
         clipboardMonitoringService.setClipboard(active.value)
+        hideAction()
     }
     
     
@@ -73,7 +76,7 @@ struct ClipboardHistory: View {
 
 
 #Preview("Items Not Loaded") {
-    ClipboardHistory(store: ClipboardStore(capacity: 10))
+    ClipboardHistory(store: ClipboardStore(capacity: 10), hideAction: { })
 }
 
 
@@ -96,7 +99,7 @@ struct ClipboardHistory: View {
     store.clipboard.push(item2, into: context)
     store.clipboard.push(item3, into: context)
 
-    return ClipboardHistory(store: store)
+    return ClipboardHistory(store: store, hideAction: { })
         .modelContainer(container)
 }
 

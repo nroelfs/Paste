@@ -14,7 +14,7 @@ struct PasteApp: App {
     @State private var clipboardMonitor: ClipboardMonitoringService
     @State private var hotkeyService: GlobalHotkeyService
 
-    private let panelController: ClipboardPanelController
+    private let panelController: ClipboardPanelService
     private let sharedModelContainer: ModelContainer
 
     init() {
@@ -22,7 +22,7 @@ struct PasteApp: App {
         let store = ClipboardStore(capacity: 10)
         let monitor = ClipboardMonitoringService()
         let hotkey = GlobalHotkeyService()
-        let panel = ClipboardPanelController(store: store)
+        let panel = ClipboardPanelService(store: store)
 
         self.sharedModelContainer = container
         self.panelController = panel
@@ -47,12 +47,7 @@ struct PasteApp: App {
 
     var body: some Scene {
         MenuBarExtra("Paste", systemImage: "doc.on.clipboard") {
-            Button("Show Clipboard") {
-                panelController.show()
-            }
-
-            Divider()
-
+            
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }

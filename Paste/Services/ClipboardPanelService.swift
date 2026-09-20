@@ -9,7 +9,7 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class ClipboardPanelController {
+final class ClipboardPanelService {
     private let store: ClipboardStore
     private var panel: NSPanel?
     private var globalMouseMonitor: Any?
@@ -19,7 +19,8 @@ final class ClipboardPanelController {
 
     func show() {
         let contentView = ClipboardHistory(
-            store: store
+            store: store,
+            hideAction: { self.hide() }
         )
         
         if let panel {

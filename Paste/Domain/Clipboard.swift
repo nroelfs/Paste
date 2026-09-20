@@ -25,8 +25,7 @@ final class Clipboard {
     func push(_ item: ClipboardItem, into context: ModelContext) {
         
         if let existingIndex = items.firstIndex(where: { $0.value == item.value }) {
-            let existing = items.remove(at: existingIndex)
-            items.insert(existing, at: 0)
+            let existing = items[existingIndex]
             activeItemId = existing.id
             return
         }

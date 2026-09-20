@@ -66,7 +66,29 @@ final class ClipboardMonitoringService {
     func setClipboard(_ value: String) {
         pasteboard.clearContents()
         pasteboard.setString(value, forType: .string)
-
         lastChangeCount = pasteboard.changeCount
+        print("Trusted: \(AXIsProcessTrusted())")
+        ClipboardMonitoringService.paste()
+    }
+    
+    private static func paste(){
+        let source = CGEventSource(stateID: .hidSystemState)
+        let commandDown = CGEvent(
+            keyboardEventSource: source,
+            virtualKey: 0x09, // V
+            keyDown: true
+        )
+
+        let commandUp = CGEvent(
+            keyboardEventSource: source,
+            virtualKey: 0x09,
+            keyDown: false
+        )
+
+        commandDown?.flags = .maskCommand
+        commandUp?.flags = .maskCommand
+
+        commandDown?.post(tap: .cghidEventTap)
+        commandUp?.post(tap: .cghidEventTap)
     }
 }
