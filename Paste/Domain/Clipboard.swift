@@ -24,6 +24,10 @@ final class Clipboard {
 
     func push(_ item: ClipboardItem, into context: ModelContext) {
         
+        guard !items.contains(where: { $0.value == item.value }) else {
+            return
+        }
+        
         activeItemId = item.id
         items.insert(item, at: 0)
 
@@ -38,6 +42,24 @@ final class Clipboard {
     func pop() -> ClipboardItem? {
         guard !items.isEmpty else { return nil }
         return items.removeFirst()
+    }
+    
+    @discardableResult
+    func remove(id: UUID) -> ClipboardItem? {
+        guard let index = items.firstIndex(where: { $0.id == id }) else {
+            return nil
+        }
+        let removedItem = items.remove(at: index)
+        if activeItemId == id
+        {
+            if let top = items.first {
+                activeItemId = top.id
+            } else {
+                activeItemId = nil
+            }
+        }
+            
+        return removedItem
     }
 
     var active: ClipboardItem? {
@@ -56,8 +78,10 @@ final class Clipboard {
         items.isEmpty
     }
     
-    func activate(id: UUID) {
-        guard items.contains(where: { $0.id == id }) else { return }
+    @discardableResult
+    func activate(id: UUID) -> Bool {
+        guard items.contains(where: { $0.id == id }) else { return false }
         activeItemId = id
+        return true
     }
 }

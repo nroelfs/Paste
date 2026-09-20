@@ -10,11 +10,24 @@ import SwiftData
 struct ClipboardHistory: View {
     @Environment(\.modelContext) private var modelContext
     let clipboard: Clipboard
+    let clipboardMonitoringService : ClipboardMonitoringService = ClipboardMonitoringService()
     
-    private func selectItem(_ id: UUID){
-        print(id)
-        clipboard.activate(id: id)
-        
+    private func selectItem(_ id: UUID) {
+        let oldActiveId = clipboard.activeItemId
+
+        guard clipboard.activate(id: id), let active = clipboard.active else {
+            if let oldActiveId {
+                clipboard.activate(id: oldActiveId)
+            }
+            return
+        }
+
+        clipboardMonitoringService.setClipboard(active.value)
+    }
+    
+    
+    @MainActor private func removeItem(id: UUID){
+        clipboard.remove(id: id)
     }
     
     
@@ -42,7 +55,7 @@ struct ClipboardHistory: View {
                                          selectAction: selectItem,
                                          active: item.id == clipboard.activeItemId)
                             .contextMenu {
-                                Text("huhu")
+                                Button("Remove",systemImage: "trash", role: .destructive, action: {removeItem(id: item.id)})
                             }
                     }
                 }

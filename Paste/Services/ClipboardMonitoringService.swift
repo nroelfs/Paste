@@ -62,4 +62,11 @@ final class ClipboardMonitoringService {
 
         onClipboardChange?(value)
     }
+    
+    func setClipboard(_ value: String) {
+        pasteboard.clearContents()
+        pasteboard.setString(value, forType: .string)
+
+        lastChangeCount = pasteboard.changeCount
+    }
 }
