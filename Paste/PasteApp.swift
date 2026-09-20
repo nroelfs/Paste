@@ -10,18 +10,63 @@ import SwiftData
 
 @main
 struct PasteApp: App {
+    @State private var store: ClipboardStore
+    @State private var clipboardMonitor: ClipboardMonitoringService
+    @State private var hotkeyService: GlobalHotkeyService
 
-    @State private var clipboardMonitor = ClipboardMonitoringService()
+    private let panelController: ClipboardPanelController
+    private let sharedModelContainer: ModelContainer
 
-    let clipboard = Clipboard.create(capacity: 10)
+    init() {
+        let container = Self.createModelContainer()
+        let store = ClipboardStore(capacity: 10)
+        let monitor = ClipboardMonitoringService()
+        let hotkey = GlobalHotkeyService()
+        let panel = ClipboardPanelController(store: store)
 
-    var sharedModelContainer: ModelContainer = {
+        self.sharedModelContainer = container
+        self.panelController = panel
+
+        _store = State(initialValue: store)
+        _clipboardMonitor = State(initialValue: monitor)
+        _hotkeyService = State(initialValue: hotkey)
+
+        monitor.start { value in
+            let item = ClipboardItem.create(input: value)
+
+            store.clipboard.push(
+                item,
+                into: container.mainContext
+            )
+        }
+
+        hotkey.register {
+            panel.show()
+        }
+    }
+
+    var body: some Scene {
+        MenuBarExtra("Paste", systemImage: "doc.on.clipboard") {
+            Button("Show Clipboard") {
+                panelController.show()
+            }
+
+            Divider()
+
+            Button("Quit") {
+                NSApplication.shared.terminate(nil)
+            }
+        }
+        .menuBarExtraStyle(.menu)
+    }
+
+    private static func createModelContainer() -> ModelContainer {
         let schema = Schema([
             Clipboard.self,
             ClipboardItem.self
         ])
 
-        let modelConfiguration = ModelConfiguration(
+        let configuration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false
         )
@@ -29,30 +74,10 @@ struct PasteApp: App {
         do {
             return try ModelContainer(
                 for: schema,
-                configurations: [modelConfiguration]
+                configurations: [configuration]
             )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
-
-    var body: some Scene {
-        WindowGroup {
-            ClipboardHistory(
-                clipboard: clipboard
-            )
-            .onAppear {
-                clipboardMonitor.start { value in
-                        let item = ClipboardItem.create(input: value)
-
-                        clipboard.push(
-                            item,
-                            into: sharedModelContainer.mainContext
-                        )
-                    }
-            }
-        }
-        .modelContainer(sharedModelContainer)
-        .windowResizability(.contentSize)
-        .defaultSize(width: 350, height: 450)
-    }}
+    }
+}

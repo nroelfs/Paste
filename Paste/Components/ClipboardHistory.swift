@@ -9,15 +9,15 @@ import SwiftData
 
 struct ClipboardHistory: View {
     @Environment(\.modelContext) private var modelContext
-    let clipboard: Clipboard
+    let store : ClipboardStore
     let clipboardMonitoringService : ClipboardMonitoringService = ClipboardMonitoringService()
     
     private func selectItem(_ id: UUID) {
-        let oldActiveId = clipboard.activeItemId
+        let oldActiveId = store.clipboard.activeItemId
 
-        guard clipboard.activate(id: id), let active = clipboard.active else {
+        guard store.clipboard.activate(id: id), let active = store.clipboard.active else {
             if let oldActiveId {
-                clipboard.activate(id: oldActiveId)
+                store.clipboard.activate(id: oldActiveId)
             }
             return
         }
@@ -27,13 +27,13 @@ struct ClipboardHistory: View {
     
     
     @MainActor private func removeItem(id: UUID){
-        clipboard.remove(id: id)
+        store.clipboard.remove(id: id)
     }
     
     
     var body: some View {
         ZStack{
-            if clipboard.isEmpty {
+            if store.clipboard.isEmpty {
                 HStack{
                     VStack(spacing: 12) {
                         Image(systemName: "list.clipboard")
@@ -50,10 +50,10 @@ struct ClipboardHistory: View {
 
             } else {
                 List {
-                    ForEach(clipboard.items, id: \.id) { item in
+                    ForEach(store.clipboard.items, id: \.id) { item in
                         ClipboardItemRow(item: item,
                                          selectAction: selectItem,
-                                         active: item.id == clipboard.activeItemId)
+                                         active: item.id == store.clipboard.activeItemId)
                             .contextMenu {
                                 Button("Remove",systemImage: "trash", role: .destructive, action: {removeItem(id: item.id)})
                             }
@@ -73,7 +73,7 @@ struct ClipboardHistory: View {
 
 
 #Preview("Items Not Loaded") {
-    ClipboardHistory(clipboard: Clipboard.create(capacity: 10))
+    ClipboardHistory(store: ClipboardStore(capacity: 10))
 }
 
 
@@ -84,20 +84,19 @@ struct ClipboardHistory: View {
             isStoredInMemoryOnly: true
         )
     )
-
+    
     let context = container.mainContext
-
-    let clipboard = Clipboard.create(capacity: 10)
+    let store = ClipboardStore(capacity: 10)
 
     let item1 = ClipboardItem.create(input: "Hello World")
     let item2 = ClipboardItem.create(input: "SwiftData")
     let item3 = ClipboardItem.create(input: "Clipboard Test")
 
-    clipboard.push(item1, into: context)
-    clipboard.push(item2, into: context)
-    clipboard.push(item3, into: context)
+    store.clipboard.push(item1, into: context)
+    store.clipboard.push(item2, into: context)
+    store.clipboard.push(item3, into: context)
 
-    return ClipboardHistory(clipboard: clipboard)
+    return ClipboardHistory(store: store)
         .modelContainer(container)
 }
 
