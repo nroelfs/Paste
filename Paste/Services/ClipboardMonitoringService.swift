@@ -14,17 +14,18 @@ final class ClipboardMonitoringService {
     private var lastChangeCount: Int
     private var monitoringTask: Task<Void, Never>?
 
-    var onClipboardChange: ((String) -> Void)?
+    var onClipboardChangeString: ((String) -> Void)?
+    var onClipboardChangeData: ((Data) -> Void)?
 
     init() {
         lastChangeCount = pasteboard.changeCount
     }
 
-    func start(onClipboardChange: @escaping (String) -> Void) {
+    func start(onClipboardChangeString: @escaping (String) -> Void, onClipboardChangeData: @escaping (Data) -> Void) {
         guard monitoringTask == nil else { return }
 
-        self.onClipboardChange = onClipboardChange
-        
+        self.onClipboardChangeString = onClipboardChangeString
+        self.onClipboardChangeData = onClipboardChangeData
         
         notify() // setzt den aktuellen eintrag aus der zwischen ablage ein
         
@@ -55,17 +56,26 @@ final class ClipboardMonitoringService {
     
     private func notify(){
         lastChangeCount = pasteboard.changeCount
-
-        guard let value = pasteboard.string(forType: .string) else {
-            return
+        if let value = pasteboard.string(forType: .string) {
+            onClipboardChangeString?(value)
         }
-
-        onClipboardChange?(value)
+        
+        if let value = pasteboard.data(forType: .png) {
+            onClipboardChangeData?(value)
+        }
     }
     
-    func setClipboard(_ value: String) {
+    func setClipboard(_ item: ClipboardItem) {
         pasteboard.clearContents()
-        pasteboard.setString(value, forType: .string)
+        switch item.kind {
+        case .string :
+            pasteboard.setString(item.asString ?? "" , forType: .string)
+        case .data :
+            if let data = item.asData, let nsImage = NSImage(data: data) {
+                pasteboard.writeObjects([nsImage])
+            }
+        }
+
         lastChangeCount = pasteboard.changeCount
         print("Trusted: \(AXIsProcessTrusted())")
         ClipboardMonitoringService.paste()

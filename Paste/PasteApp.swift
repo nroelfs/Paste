@@ -31,8 +31,15 @@ struct PasteApp: App {
         _clipboardMonitor = State(initialValue: monitor)
         _hotkeyService = State(initialValue: hotkey)
 
-        monitor.start { value in
-            let item = ClipboardItem.create(input: value)
+        monitor.start{ value in
+            let item = ClipboardItem.create(value: value)
+
+            store.clipboard.push(
+                item,
+                into: container.mainContext
+            )
+        } onClipboardChangeData: { value in
+            let item = ClipboardItem.create(value: value)
 
             store.clipboard.push(
                 item,

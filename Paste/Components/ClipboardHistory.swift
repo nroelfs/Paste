@@ -24,7 +24,7 @@ struct ClipboardHistory: View {
             return
         }
 
-        clipboardMonitoringService.setClipboard(active.value)
+        clipboardMonitoringService.setClipboard(active)
         hideAction()
     }
     
@@ -74,35 +74,41 @@ struct ClipboardHistory: View {
 
 
 
-
-#Preview("Items Not Loaded") {
-    ClipboardHistory(store: ClipboardStore(capacity: 10), hideAction: { })
-}
-
-
-#Preview("Items Loaded") {
+#if DEBUG
+@MainActor
+private func makePreviewStore(withItems: Bool) -> ClipboardStore {
     let container = try! ModelContainer(
         for: ClipboardItem.self,
-        configurations: ModelConfiguration(
-            isStoredInMemoryOnly: true
-        )
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
-    
     let context = container.mainContext
     let store = ClipboardStore(capacity: 10)
 
-    let item1 = ClipboardItem.create(input: "Hello World")
-    let item2 = ClipboardItem.create(input: "SwiftData")
-    let item3 = ClipboardItem.create(input: "Clipboard Test")
+    if withItems {
+        let item1 = ClipboardItem.create(value: "Hello World")
+        let item2 = ClipboardItem.create(value: "SwiftData")
+        let item3 = ClipboardItem.create(value: "Clipboard Test")
 
-    store.clipboard.push(item1, into: context)
-    store.clipboard.push(item2, into: context)
-    store.clipboard.push(item3, into: context)
+        context.insert(item1)
+        context.insert(item2)
+        context.insert(item3)
 
-    return ClipboardHistory(store: store, hideAction: { })
-        .modelContainer(container)
+        store.clipboard.push(item1, into: context)
+        store.clipboard.push(item2, into: context)
+        store.clipboard.push(item3, into: context)
+    }
+
+    return store
+}
+#endif
+
+
+#Preview("Items Not Loaded") {
+    ClipboardHistory(store: makePreviewStore(withItems: false), hideAction: { })
 }
 
-
+#Preview("Items Loaded") {
+    ClipboardHistory(store: makePreviewStore(withItems: true), hideAction: { })
+}
 
 
