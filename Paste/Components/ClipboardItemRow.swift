@@ -52,18 +52,9 @@ struct ClipboardItemRow: View {
             }
         }
         .padding()
-        .frame(width: 350, height: rowHeight, alignment: .leading)
+        .frame(width: 350, height: 70, alignment: .leading)
         .onTapGesture {
             selectAction(item.id)
-        }
-    }
-
-    private var rowHeight: CGFloat {
-        switch item.kind {
-        case .string:
-            return 35
-        case .data:
-            return 70
         }
     }
 }
