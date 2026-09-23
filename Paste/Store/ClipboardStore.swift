@@ -12,8 +12,12 @@ import Observation
 @Observable
 final class ClipboardStore {
     let clipboard: Clipboard
-
+    
     init(capacity: Int = 10) {
         clipboard = Clipboard.create(capacity: capacity)
+    }
+    
+    init(configuration: Configuration) {
+        clipboard = Clipboard.create(capacity: configuration.capacity)
     }
 }

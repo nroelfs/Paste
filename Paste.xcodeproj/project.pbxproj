@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		354276F130600A1C0084FE8D /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 354276F030600A110084FE8D /* .gitignore */; };
+		358618503064507300598DB1 /* TOMLKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3586184F3064507300598DB1 /* TOMLKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +57,7 @@
 		354276A3305D6C180084FE8D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				358618503064507300598DB1 /* TOMLKit in Frameworks */,
 			);
 		};
 		354276B2305D6C190084FE8D /* Frameworks */ = {
@@ -78,6 +80,7 @@
 				354276A8305D6C180084FE8D /* Paste */,
 				354276B8305D6C190084FE8D /* PasteTests */,
 				354276C2305D6C190084FE8D /* PasteUITests */,
+				3586184E3064506800598DB1 /* Frameworks */,
 				354276A7305D6C180084FE8D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +93,13 @@
 				354276BF305D6C190084FE8D /* PasteUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3586184E3064506800598DB1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -109,6 +119,9 @@
 				354276A8305D6C180084FE8D /* Paste */,
 			);
 			name = Paste;
+			packageProductDependencies = (
+				3586184F3064507300598DB1 /* TOMLKit */,
+			);
 			productName = Paste;
 			productReference = 354276A6305D6C180084FE8D /* Paste.app */;
 			productType = "com.apple.product-type.application";
@@ -187,6 +200,9 @@
 			);
 			mainGroup = 3542769D305D6C180084FE8D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3586184D30644E0100598DB1 /* XCRemoteSwiftPackageReference "TOMLKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 354276A7305D6C180084FE8D /* Products */;
 			projectDirPath = "";
@@ -552,6 +568,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3586184D30644E0100598DB1 /* XCRemoteSwiftPackageReference "TOMLKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stackotter/TOMLKit";
+			requirement = {
+				kind = exactVersion;
+				version = 0.7.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3586184F3064507300598DB1 /* TOMLKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3586184D30644E0100598DB1 /* XCRemoteSwiftPackageReference "TOMLKit" */;
+			productName = TOMLKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3542769E305D6C180084FE8D /* Project object */;
 	validationLevel = 1;

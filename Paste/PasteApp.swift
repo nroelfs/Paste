@@ -13,43 +13,56 @@ struct PasteApp: App {
     @State private var store: ClipboardStore
     @State private var clipboardMonitor: ClipboardMonitoringService
     @State private var hotkeyService: GlobalHotkeyService
-
+    @State private var configurationStore: ConfigurationStore
+    
     private let panelController: ClipboardPanelService
     private let sharedModelContainer: ModelContainer
 
     init() {
         let container = Self.createModelContainer()
-        let store = ClipboardStore(capacity: 10)
-        let monitor = ClipboardMonitoringService()
-        let hotkey = GlobalHotkeyService()
-        let panel = ClipboardPanelService(store: store)
+        let configStore: ConfigurationStore
+        do {
+            configStore = try ConfigurationStore()
+            let store = ClipboardStore(configuration: try configStore.load())
+            let monitor = ClipboardMonitoringService()
+            let hotkey = GlobalHotkeyService()
+            let panel = ClipboardPanelService(store: store)
 
-        self.sharedModelContainer = container
-        self.panelController = panel
+            self.sharedModelContainer = container
+            self.panelController = panel
 
-        _store = State(initialValue: store)
-        _clipboardMonitor = State(initialValue: monitor)
-        _hotkeyService = State(initialValue: hotkey)
+            _store = State(initialValue: store)
+            _clipboardMonitor = State(initialValue: monitor)
+            _hotkeyService = State(initialValue: hotkey)
+            _configurationStore = State(initialValue: configStore)
 
-        monitor.start{ value in
-            let item = ClipboardItem.create(value: value)
+            monitor.start{ value in
+                let item = ClipboardItem.create(value: value)
 
-            store.clipboard.push(
-                item,
-                into: container.mainContext
-            )
-        } onClipboardChangeData: { value in
-            let item = ClipboardItem.create(value: value)
+                store.clipboard.push(
+                    item,
+                    into: container.mainContext
+                )
+            } onClipboardChangeData: { value in
+                let item = ClipboardItem.create(value: value)
 
-            store.clipboard.push(
-                item,
-                into: container.mainContext
-            )
+                store.clipboard.push(
+                    item,
+                    into: container.mainContext
+                )
+            }
+            
+            hotkey.register {
+                panel.show()
+            }
+
+        } catch {
+            print("Fehler beim Laden der Konfiguration: \(error). Nutze Standardwerte.")
+            fatalError("Configuration could not be loaded: \(error)")
         }
 
-        hotkey.register {
-            panel.show()
-        }
+
+
     }
 
     var body: some Scene {
