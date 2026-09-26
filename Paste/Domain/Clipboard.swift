@@ -63,6 +63,18 @@ final class Clipboard {
             
         return removedItem
     }
+    
+    func updateCapacity(newCapacity: Int ){
+        guard newCapacity != capacity else {return}
+
+        if newCapacity < capacity {
+            let diff = (capacity - newCapacity)
+            let countDif = items.count - newCapacity
+            if countDif < diff { items.removeLast(countDif)}
+            else if diff > 0 { items.removeLast(diff) }
+        }
+        capacity = newCapacity
+    }
 
     var active: ClipboardItem? {
         items.first(where: {$0.id == activeItemId})

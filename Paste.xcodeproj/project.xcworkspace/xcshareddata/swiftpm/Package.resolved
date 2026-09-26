@@ -1,0 +1,15 @@
+{
+  "originHash" : "a12c38970ce5e5976d08a8ab87ca65c0795c2308a6b0baaa72a0eeeb10c98959",
+  "pins" : [
+    {
+      "identity" : "tomlkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/stackotter/TOMLKit",
+      "state" : {
+        "revision" : "6206c73fc5adb16b0f75665a1c5fcf1f7da4be1b",
+        "version" : "0.7.1"
+      }
+    }
+  ],
+  "version" : 3
+}

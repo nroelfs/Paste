@@ -100,8 +100,6 @@ private func makePreviewStore(withItems: Bool) -> ClipboardStore {
 
     return store
 }
-#endif
-
 
 #Preview("Items Not Loaded") {
     ClipboardHistory(store: makePreviewStore(withItems: false), hideAction: { })
@@ -110,5 +108,10 @@ private func makePreviewStore(withItems: Bool) -> ClipboardStore {
 #Preview("Items Loaded") {
     ClipboardHistory(store: makePreviewStore(withItems: true), hideAction: { })
 }
+
+#endif
+
+
+
 
 

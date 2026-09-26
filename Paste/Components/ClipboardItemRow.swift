@@ -70,7 +70,6 @@ private func makePreviewItem() -> ClipboardItem {
     container.mainContext.insert(item)
     return item
 }
-#endif
 
 #Preview("Active") {
     ClipboardItemRow(
@@ -87,3 +86,5 @@ private func makePreviewItem() -> ClipboardItem {
         active: false
     )
 }
+#endif
+

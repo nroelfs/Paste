@@ -15,9 +15,11 @@ struct PasteApp: App {
     @State private var hotkeyService: GlobalHotkeyService
     @State private var configurationStore: ConfigurationStore
     
+    private var directoryWatcher: DirectoryWatcher?
     private let panelController: ClipboardPanelService
     private let sharedModelContainer: ModelContainer
 
+    
     init() {
         let container = Self.createModelContainer()
         let configStore: ConfigurationStore
@@ -27,10 +29,20 @@ struct PasteApp: App {
             let monitor = ClipboardMonitoringService()
             let hotkey = GlobalHotkeyService()
             let panel = ClipboardPanelService(store: store)
-
+            let directoryWatcher = DirectoryWatcher(path: configStore.configDir.path()) {
+                do {
+                    let conf = try configStore.load()
+                    store.clipboard.updateCapacity(newCapacity: conf.capacity)
+                } catch {
+                    print("failed to reload config \(error)")
+                }
+            }
+            directoryWatcher.start()
+            
             self.sharedModelContainer = container
             self.panelController = panel
-
+            self.directoryWatcher = directoryWatcher
+            
             _store = State(initialValue: store)
             _clipboardMonitor = State(initialValue: monitor)
             _hotkeyService = State(initialValue: hotkey)
@@ -55,7 +67,7 @@ struct PasteApp: App {
             hotkey.register {
                 panel.show()
             }
-
+        
         } catch {
             print("Fehler beim Laden der Konfiguration: \(error). Nutze Standardwerte.")
             fatalError("Configuration could not be loaded: \(error)")
