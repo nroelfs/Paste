@@ -32,7 +32,7 @@ struct PasteApp: App {
             let directoryWatcher = DirectoryWatcher(path: configStore.configDir.path()) {
                 do {
                     let conf = try configStore.load()
-                    store.clipboard.updateCapacity(newCapacity: conf.capacity)
+                    try ConfigLoader.Load(conf, store: store)
                 } catch {
                     print("failed to reload config \(error)")
                 }
