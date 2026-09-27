@@ -23,15 +23,15 @@ struct ClipboardItemRow: View {
         }
     }
 
-    private func imgVal(_ data: Data) -> some View {
+    private func imgVal(_ item: ClipboardItem) -> some View {
         Group {
-            if let nsImage = NSImage(data: data) {
-                Image(nsImage: nsImage)
+            if let thumbnail = item.cachedThumbnail {
+                Image(nsImage: thumbnail)
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: 60, maxHeight: 60)
             } else {
-                Text("Bild konnte nicht geladen werden")
+                Text("Vorschau nicht verfügbar")
                     .foregroundColor(.secondary)
                     .font(.system(size: 12))
             }
@@ -47,7 +47,7 @@ struct ClipboardItemRow: View {
                 case .string:
                     stringVal(item.asString ?? "")
                 case .data:
-                    imgVal(item.asData ?? Data())
+                    imgVal(item)
                 }
             }
         }

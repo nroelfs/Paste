@@ -23,56 +23,58 @@ final class Clipboard {
     }
 
     func push(_ item: ClipboardItem, into context: ModelContext) {
-        
         if let existingIndex = items.firstIndex(where: { $0 == item }) {
-            let existing = items[existingIndex]
+            let existing = items.remove(at: existingIndex)
+            items.insert(existing, at: 0)
             activeItemId = existing.id
+
+            item.deleteAssociatedFiles()
+
+            try? context.save()
             return
         }
-        
+
         activeItemId = item.id
         items.insert(item, at: 0)
 
         if items.count > capacity {
-            items.removeLast()
+            let removed = items.removeLast()
+            removed.deleteAssociatedFiles()
         }
-        
+
         try? context.save()
     }
 
-    @discardableResult
-    func pop() -> ClipboardItem? {
-        guard !items.isEmpty else { return nil }
-        return items.removeFirst()
-    }
-    
     @discardableResult
     func remove(id: UUID) -> ClipboardItem? {
         guard let index = items.firstIndex(where: { $0.id == id }) else {
             return nil
         }
         let removedItem = items.remove(at: index)
-        if activeItemId == id
-        {
-            if let top = items.first {
-                activeItemId = top.id
-            } else {
-                activeItemId = nil
-            }
+        removedItem.deleteAssociatedFiles()
+
+        if activeItemId == id {
+            activeItemId = items.first?.id
         }
-            
+
         return removedItem
     }
     
-    func updateCapacity(newCapacity: Int ){
-        guard newCapacity != capacity else {return}
+    func updateCapacity(newCapacity: Int) {
+        guard newCapacity != capacity else { return }
 
-        if newCapacity < capacity {
-            let diff = (capacity - newCapacity)
-            let countDif = items.count - newCapacity
-            if countDif < diff { items.removeLast(countDif)}
-            else if diff > 0 { items.removeLast(diff) }
+        if newCapacity < items.count {
+            let removeCount = items.count - newCapacity
+            let removedItems = items.suffix(removeCount)
+
+            items.removeLast(removeCount)
+            removedItems.forEach { $0.deleteAssociatedFiles() }
+
+            if let activeItemId, removedItems.contains(where: { $0.id == activeItemId }) {
+                self.activeItemId = items.first?.id
+            }
         }
+
         capacity = newCapacity
     }
 

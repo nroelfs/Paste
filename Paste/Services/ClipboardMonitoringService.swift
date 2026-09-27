@@ -15,13 +15,13 @@ final class ClipboardMonitoringService {
     private var monitoringTask: Task<Void, Never>?
 
     var onClipboardChangeString: ((String) -> Void)?
-    var onClipboardChangeData: ((Data) -> Void)?
+    var onClipboardChangeData: ((Data, String) -> Void)?
 
     init() {
         lastChangeCount = pasteboard.changeCount
     }
 
-    func start(onClipboardChangeString: @escaping (String) -> Void, onClipboardChangeData: @escaping (Data) -> Void) {
+    func start(onClipboardChangeString: @escaping (String) -> Void, onClipboardChangeData: @escaping (Data, String) -> Void) {
         guard monitoringTask == nil else { return }
 
         self.onClipboardChangeString = onClipboardChangeString
@@ -60,9 +60,26 @@ final class ClipboardMonitoringService {
             onClipboardChangeString?(value)
         }
         
-        if let value = pasteboard.data(forType: .png) {
-            onClipboardChangeData?(value)
+        if let (data, ext) = imageData() {
+            onClipboardChangeData?(data, ext)
         }
+    }
+    
+    private func imageData() -> (Data, String)? {
+        if let data = pasteboard.data(forType: .png) {
+            return (data, "png")
+        }
+        if let data = pasteboard.data(forType: .tiff) {
+            return (data, "tiff")
+        }
+
+        if let fileURL = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.first as? URL,
+           let data = try? Data(contentsOf: fileURL),
+           NSImage(data: data) != nil {
+            return (data, fileURL.pathExtension.isEmpty ? "png" : fileURL.pathExtension)
+        }
+
+        return nil
     }
     
     func setClipboard(_ item: ClipboardItem) {

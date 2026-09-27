@@ -12,7 +12,9 @@ import SwiftUI
 final class ClipboardPanelService {
     private let store: ClipboardStore
     private var panel: NSPanel?
+    private var hostingView: NSHostingView<ClipboardHistory>?
     private var globalMouseMonitor: Any?
+
     init(store: ClipboardStore) {
         self.store = store
     }
@@ -20,62 +22,60 @@ final class ClipboardPanelService {
     func show() {
         let contentView = ClipboardHistory(
             store: store,
-            hideAction: { self.hide() }
+            hideAction: { [weak self] in self?.hide() }
         )
-        
-        if let panel {
-               panel.contentView = NSHostingView(
-                   rootView: contentView
-               )
-               panel.orderFrontRegardless()
-               return
-           }
-           var mouseLocation: NSPoint { NSEvent.mouseLocation }
-           let panel = NSPanel(
-               contentRect: NSRect(
-                    x: mouseLocation.x,
-                    y: mouseLocation.y,
-                   width: 350,
-                   height: 450
-               ),
-               styleMask: [
-                   .borderless,
-                   .nonactivatingPanel
-               ],
-               backing: .buffered,
-               defer: false
-           )
 
-           panel.contentView = NSHostingView(
-               rootView: contentView
-           )
+        if let panel, let hostingView {
+            hostingView.rootView = contentView
+            positionPanel(panel)
+            panel.orderFrontRegardless()
+            return
+        }
 
-           panel.isOpaque = false
-           panel.backgroundColor = .clear
-           panel.hasShadow = true
-           panel.isFloatingPanel = true
-           panel.level = .floating
-           panel.hidesOnDeactivate = false
+        let mouseLocation = NSEvent.mouseLocation
+        let newPanel = NSPanel(
+            contentRect: NSRect(
+                x: mouseLocation.x,
+                y: mouseLocation.y,
+                width: 350,
+                height: 450
+            ),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
 
-           self.panel = panel
-           globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
-                   matching: [.leftMouseDown, .rightMouseDown]
-               ) { [weak self] event in
-                   Task { @MainActor in
-                       guard let self, let panel = self.panel else {
-                           return
-                       }
+        let newHostingView = NSHostingView(rootView: contentView)
+        newPanel.contentView = newHostingView
 
-                       let mouseLocation = NSEvent.mouseLocation
+        newPanel.isOpaque = false
+        newPanel.backgroundColor = .clear
+        newPanel.hasShadow = true
+        newPanel.isFloatingPanel = true
+        newPanel.level = .floating
+        newPanel.hidesOnDeactivate = false
 
-                       if !panel.frame.contains(mouseLocation) {
-                           self.hide()
-                       }
-                   }
-               }
+        self.panel = newPanel
+        self.hostingView = newHostingView
 
-           panel.orderFrontRegardless()
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] event in
+            Task { @MainActor in
+                guard let self, let panel = self.panel else { return }
+                let mouseLocation = NSEvent.mouseLocation
+                if !panel.frame.contains(mouseLocation) {
+                    self.hide()
+                }
+            }
+        }
 
+        newPanel.orderFrontRegardless()
+    }
+
+    private func positionPanel(_ panel: NSPanel) {
+        let mouseLocation = NSEvent.mouseLocation
+        panel.setFrameOrigin(NSPoint(x: mouseLocation.x, y: mouseLocation.y))
     }
 
     func hide() {
