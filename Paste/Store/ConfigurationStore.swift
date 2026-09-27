@@ -16,12 +16,15 @@ import TOMLKit
 final class ConfigurationStore {
     
     private let home = FileManager.default.homeDirectoryForCurrentUser
+    
     private let folderUrl = ".config/apizzacomp"
     private let configPaste = "paste.toml"
     private let configShortCut = "shortcuts.toml"
+    
     private let fileManager = FileManager.default
-    var pasteConfig : Configuration? = nil
+    
     var configDir : URL
+    
     init() throws{
         configDir = home.appendingPathComponent(folderUrl)
         try load()
@@ -32,9 +35,18 @@ final class ConfigurationStore {
 
         let pasteUrl = configDir.appendingPathComponent(configPaste)
         
-        if !fileManager.fileExists(atPath: pasteUrl.path) {
-            try createConfig(configuration: Configuration(), folderUrl: configDir, configName: configPaste)
-        }
+        guard fileManager.fileExists(atPath: pasteUrl.path) else {
+             let configuration = Configuration()
+
+             try save(configuration)
+
+             return configuration
+         }
+        
+
+        let configuration = try loadPasteConfig(pasteUrl)
+
+        try save(configuration)
         
         return try loadPasteConfig(pasteUrl)
     }
@@ -53,10 +65,13 @@ final class ConfigurationStore {
     
 
     
-    private func loadPasteConfig<T : Decodable>(_ pasteUrl: URL) throws -> T{
+    private func loadPasteConfig(_ pasteUrl: URL) throws -> Configuration {
+
         var fileEncoding: String.Encoding = .utf8
+
         let fileContent = try String(contentsOf: pasteUrl, usedEncoding: &fileEncoding)
-        return try TOMLDecoder().decode(T.self, from: fileContent)
+
+        return try TOMLDecoder().decode(Configuration.self,from: fileContent)
     }
     
     

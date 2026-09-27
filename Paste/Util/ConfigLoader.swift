@@ -8,13 +8,17 @@ import ServiceManagement
 
 final class ConfigLoader{
     static func Load(_ conf: Configuration, store: ClipboardStore) throws {
+        try handleGeneral(conf.general, store: store)
+    }
+    
+    private static func handleGeneral(_ conf: GeneralConfiguration, store: ClipboardStore) throws{
         if store.clipboard.capacity != conf.capacity {
             store.clipboard.updateCapacity(newCapacity: conf.capacity)
         }
         try autostartCheck(conf: conf)
     }
     
-    private static func autostartCheck(conf: Configuration) throws{
+    private static func autostartCheck(conf: GeneralConfiguration) throws{
         let status = SMAppService.mainApp.status
         switch status{
         case .enabled:

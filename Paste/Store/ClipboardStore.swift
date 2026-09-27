@@ -18,6 +18,6 @@ final class ClipboardStore {
     }
     
     init(configuration: Configuration) {
-        clipboard = Clipboard.create(capacity: configuration.capacity)
+        clipboard = Clipboard.create(capacity: configuration.general.capacity)
     }
 }
