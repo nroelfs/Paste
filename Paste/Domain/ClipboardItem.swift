@@ -140,8 +140,7 @@ final class ClipboardItem: Identifiable {
             try? FileManager.default.removeItem(at: file)
         }
     }
-
-
+    
 }
 
 
@@ -153,3 +152,6 @@ extension ClipboardItem: Equatable {
         lhs.contentHash == rhs.contentHash
     }
 }
+
+
+

@@ -77,6 +77,7 @@ final class Clipboard {
 
         capacity = newCapacity
     }
+    
 
     var active: ClipboardItem? {
         items.first(where: {$0.id == activeItemId})

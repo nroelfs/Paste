@@ -5,6 +5,8 @@
 //  Created by Nicklas Roelfs on 27.09.26.
 //
 
+import Foundation
+
 enum ClipboardLifetimeKind: String, Codable {
     case hours
     case minutes
@@ -44,5 +46,18 @@ extension ClipboardLifeTimeConfiguration: Equatable {
     static func ==(lhs: ClipboardLifeTimeConfiguration, rhs: ClipboardLifeTimeConfiguration) -> Bool {
         lhs.kind == rhs.kind &&
         lhs.timespan == lhs.timespan
+    }
+}
+
+extension ClipboardLifeTimeConfiguration {
+    func expirationDate(from date: Date = Date()) -> Date? {
+        let component: Calendar.Component
+        switch kind {
+        case .seconds: component = .second
+        case .minutes: component = .minute
+        case .hours:   component = .hour
+
+        }
+        return Calendar.current.date(byAdding: component, value: timespan, to: date)
     }
 }

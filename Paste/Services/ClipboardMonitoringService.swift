@@ -73,10 +73,17 @@ final class ClipboardMonitoringService {
             return (data, "tiff")
         }
 
-        if let fileURL = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.first as? URL,
+        if let fileURL = pasteboard.readObjects(
+            forClasses: [NSURL.self],
+            options: nil
+        )?.first as? URL,
+           fileURL.isFileURL,
            let data = try? Data(contentsOf: fileURL),
            NSImage(data: data) != nil {
-            return (data, fileURL.pathExtension.isEmpty ? "png" : fileURL.pathExtension)
+            return (
+                data,
+                fileURL.pathExtension.isEmpty ? "png" : fileURL.pathExtension
+            )
         }
 
         return nil

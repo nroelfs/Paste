@@ -7,8 +7,9 @@
 import ServiceManagement
 
 final class ConfigLoader{
-    static func Load(_ conf: Configuration, store: ClipboardStore) throws {
+    static func Load(_ conf: Configuration, store: ClipboardStore, lifetimeService: LifetimeService) throws {
         try handleGeneral(conf.general, store: store)
+        try lifetimeUpdate(conf: conf.clipboardLifeTime, service: lifetimeService)
     }
     
     private static func handleGeneral(_ conf: GeneralConfiguration, store: ClipboardStore) throws{
@@ -16,6 +17,7 @@ final class ConfigLoader{
             store.clipboard.updateCapacity(newCapacity: conf.capacity)
         }
         try autostartCheck(conf: conf)
+        
     }
     
     private static func autostartCheck(conf: GeneralConfiguration) throws{
@@ -33,5 +35,9 @@ final class ConfigLoader{
         @unknown default:
             break;
         }
+    }
+    
+    private static func lifetimeUpdate (conf: ClipboardLifeTimeConfiguration, service: LifetimeService) throws {
+        service.updateConfig(conf)
     }
 }
