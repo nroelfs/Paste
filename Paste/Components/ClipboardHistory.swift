@@ -15,11 +15,11 @@ struct ClipboardHistory: View {
     
     
     private func selectItem(_ id: UUID) {
-        let oldActiveId = store.clipboard.activeItemId
+        let oldActiveId = store.activeItemId
 
-        guard store.clipboard.activate(id: id), let active = store.clipboard.active else {
+        guard store.activate(id: id), let active = store.active else {
             if let oldActiveId {
-                store.clipboard.activate(id: oldActiveId)
+                store.activate(id: oldActiveId)
             }
             return
         }
@@ -30,13 +30,13 @@ struct ClipboardHistory: View {
     
     
     @MainActor private func removeItem(id: UUID){
-        store.clipboard.remove(id: id)
+        store.remove(id: id)
     }
     
     
     var body: some View {
         ZStack{
-            if store.clipboard.isEmpty {
+            if store.isEmpty {
                 HStack{
                     VStack(spacing: 12) {
                         Image(systemName: "list.clipboard")
@@ -53,10 +53,10 @@ struct ClipboardHistory: View {
 
             } else {
                 List {
-                    ForEach(store.clipboard.items, id: \.id) { item in
+                    ForEach(store.items, id: \.id) { item in
                         ClipboardItemRow(item: item,
                                          selectAction: selectItem,
-                                         active: item.id == store.clipboard.activeItemId)
+                                         active: item.id == store.activeItemId)
                             .contextMenu {
                                 Button("Remove",systemImage: "trash", role: .destructive, action: {removeItem(id: item.id)})
                             }
@@ -93,9 +93,9 @@ private func makePreviewStore(withItems: Bool) -> ClipboardStore {
         context.insert(item2)
         context.insert(item3)
 
-        store.clipboard.push(item1, into: context)
-        store.clipboard.push(item2, into: context)
-        store.clipboard.push(item3, into: context)
+        store.push(item1, into: context)
+        store.push(item2, into: context)
+        store.push(item3, into: context)
     }
 
     return store

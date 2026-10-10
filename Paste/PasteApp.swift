@@ -42,7 +42,7 @@ struct PasteApp: App {
                 }
             }
             directoryWatcher.start()
-            ClipboardItem.cleanupOrphanedFiles(keeping: store.clipboard.items)
+            ClipboardItem.cleanupOrphanedFiles(keeping: store.items)
             
             self.sharedModelContainer = container
             self.panelController = panel
@@ -56,13 +56,13 @@ struct PasteApp: App {
             
             
             lifetime.start(onEntryExpire: { id in
-                store.clipboard.remove(id: id)
+                store.remove(id: id)
             })
             
             monitor.start{ value in
                 let item = ClipboardItem.create(value: value)
 
-                store.clipboard.push(
+                store.push(
                     item,
                     into: container.mainContext
                 )
@@ -72,7 +72,7 @@ struct PasteApp: App {
             } onClipboardChangeData: { data, ext in
                 let item = ClipboardItem.create(value: data, fileExtension: ext)
 
-                store.clipboard.push(
+                store.push(
                     item,
                     into: container.mainContext
                 )
@@ -104,7 +104,6 @@ struct PasteApp: App {
 
     private static func createModelContainer() -> ModelContainer {
         let schema = Schema([
-            Clipboard.self,
             ClipboardItem.self
         ])
 

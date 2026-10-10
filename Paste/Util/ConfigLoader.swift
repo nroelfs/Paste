@@ -13,8 +13,8 @@ final class ConfigLoader{
     }
     
     private static func handleGeneral(_ conf: GeneralConfiguration, store: ClipboardStore) throws{
-        if store.clipboard.capacity != conf.capacity {
-            store.clipboard.updateCapacity(newCapacity: conf.capacity)
+        if store.capacity != conf.capacity {
+            store.updateCapacity(newCapacity: conf.capacity)
         }
         try autostartCheck(conf: conf)
         
