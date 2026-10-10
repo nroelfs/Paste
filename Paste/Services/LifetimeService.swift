@@ -60,7 +60,12 @@ final class LifetimeService{
         for entry in expired {
             onEntryExpire?(entry.id)
         }
-        queue.removeFirst(expired.count)
+        if queue.count >= expired.count {
+            queue.removeFirst(expired.count)
+        }
+        else if queue.count < expired.count {
+            queue.removeAll()
+        }
     }
     
     func schedule(id: UUID, createdAt: Date) {

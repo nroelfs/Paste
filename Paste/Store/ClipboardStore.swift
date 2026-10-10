@@ -21,6 +21,8 @@ final class ClipboardStore {
     private(set) var capacity: Int
     private(set) var activeItemId: UUID? = nil
     var postDeleteAction:(UUID) -> Void
+    
+    
     // #############
     // #   Ctor    #
     // #############
@@ -123,5 +125,17 @@ final class ClipboardStore {
         return true
     }
     
+    func pinItem(id: UUID) {
+        do {
+            var toPin = items.first(where: {$0.id == id})
+            guard toPin != nil else { return }
+            try toPin!.pin()
+            remove(id: id)
+            pinned.append(toPin!)
+        } catch {
+            print("faild to pin item")
+        }
+
+    }
 
 }

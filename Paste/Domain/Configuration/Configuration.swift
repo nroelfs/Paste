@@ -6,13 +6,17 @@
 //
 import TOMLKit
 
-
-
 struct Configuration : Codable{
     
+    // ##############
+    // #   Props    #
+    // ##############
     var general : GeneralConfiguration = GeneralConfiguration()
     var clipboardLifeTime : ClipboardLifeTimeConfiguration = ClipboardLifeTimeConfiguration()
     
+    // #############
+    // #   Ctor    #
+    // #############
     init(){}
     
     init(from decoder: Decoder) throws {

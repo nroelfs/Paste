@@ -31,8 +31,8 @@ struct PasteApp: App {
             let hotkey = GlobalHotkeyService()
             let lifetime = LifetimeService(configuartion.clipboardLifeTime)
             
-            let store = ClipboardStore(configuration: configuartion, postDeleteAction:{ id in
-                    
+            let store = ClipboardStore(configuration: configuartion, postDeleteAction: { id in
+                lifetime.remove(id: id)
             })
             let panel = ClipboardPanelService(store: store)
             
@@ -45,11 +45,13 @@ struct PasteApp: App {
                 }
             }
             directoryWatcher.start()
-            ClipboardItem.cleanupOrphanedFiles(keeping: store.items)
+            
             
             self.sharedModelContainer = container
             self.panelController = panel
             self.directoryWatcher = directoryWatcher
+            
+            try ClipboardItem.startupCleanup(in: sharedModelContainer.mainContext)
             
             _lifetimeService = State(initialValue: lifetime)
             _store = State(initialValue: store)
@@ -63,7 +65,7 @@ struct PasteApp: App {
             })
             
             monitor.start{ value in
-                let item = ClipboardItem.create(value: value)
+                let item = ClipboardItem(text: value)
 
                 store.push(
                     item,
@@ -73,13 +75,13 @@ struct PasteApp: App {
                 
                 
             } onClipboardChangeData: { data, ext in
-                let item = ClipboardItem.create(value: data, fileExtension: ext)
-
-                store.push(
-                    item,
-                    into: container.mainContext
-                )
-                lifetime.schedule(id: item.id, createdAt: item.createdAt)
+                do {
+                    let item = try ClipboardItem(data: data, fileExtension: ext)
+                    store.push(item, into: container.mainContext)
+                    lifetime.schedule(id: item.id, createdAt: item.createdAt)
+                } catch {
+                    print("Clipboard-Eintrag konnte nicht gespeichert werden: \(error)")
+                }
             }
             
             hotkey.register {

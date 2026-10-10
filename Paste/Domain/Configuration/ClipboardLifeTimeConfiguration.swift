@@ -7,16 +7,17 @@
 
 import Foundation
 
-enum ClipboardLifetimeKind: String, Codable {
-    case hours
-    case minutes
-    case seconds
-}
-
 struct ClipboardLifeTimeConfiguration : Codable {
+    
+    // ##############
+    // #   Props    #
+    // ##############
     var timespan : Int = 36
     var kind : ClipboardLifetimeKind = .hours
     
+    // #############
+    // #   Ctor    #
+    // #############
     init() {}
     
     init(from decoder: Decoder) throws {

@@ -11,152 +11,132 @@ import AppKit
 import ImageIO
 import CryptoKit
 
-enum ClipboardItemKind: Int, Codable {
-    case string
-    case data
-}
 
-enum ClipboardItemValue {
-    case string(String)
-    case data(Data)
-}
-
-enum StorageLocation {
-    static var temp: URL {
-        directory(URL.temporaryDirectory
-            .appending(path: "PasteClipboardData", directoryHint: .isDirectory))
-    }
-    
-    static var persistent: URL {
-        directory(URL.applicationSupportDirectory
-            .appending(path: Bundle.main.bundleIdentifier ?? "PasteClipboardData", directoryHint: .isDirectory)
-            .appending(path: "Pinned", directoryHint: .isDirectory))
-    }
- 
-    private static func directory(_ url: URL) -> URL {
-        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        return url
-    }
-}
 @Model
 final class ClipboardItem: Identifiable {
+    
+    // ##############
+    // #   Props    #
+    // ##############
     private(set) var id = UUID()
     private(set) var createdAt = Date()
     private(set) var kind: ClipboardItemKind
 
     private var stringValue: String?
-    private(set) var fileURL: URL?
-    private(set) var thumbnailFileURL: URL?
+    
+    private(set) var fileName: String?
+    private(set) var thumbnailFileName: String?
     private(set) var contentHash: String?
-
-    private init(
-        kind: ClipboardItemKind,
-        stringValue: String? = nil,
-        fileURL: URL? = nil,
-        thumbnailFileURL: URL? = nil,
-        contentHash: String? = nil
-    ) {
-        self.kind = kind
-        self.stringValue = stringValue
-        self.fileURL = fileURL
-        self.thumbnailFileURL = thumbnailFileURL
-        self.contentHash = contentHash
+    
+    @Relationship(deleteRule: .cascade, inverse: \PinInfo.item) var pinInfo: PinInfo?
+    
+    // #############
+    // #   Ctor    #
+    // #############
+    init(text: String) {
+        self.kind = .string
+        self.stringValue = text
     }
 
-    static func create(value: String) -> ClipboardItem {
-        ClipboardItem(kind: .string, stringValue: value)
+    init(data: Data, fileExtension: String) throws {
+        let stored = try ClipboardFileStorage.store(
+            data, fileExtension: fileExtension, in: StorageLocation.temp
+        )
+        self.kind = .data
+        self.fileName = stored.fileName
+        self.thumbnailFileName = stored.thumbnailFileName
+        self.contentHash = stored.contentHash
     }
-
-    static func create(value: Data, fileExtension: String) -> ClipboardItem {
-        let hash = SHA256.hash(data: value)
-            .compactMap { String(format: "%02x", $0) }
-            .joined()
-
-        let fileURL = writeToTempFile(value, suffix: fileExtension)
-
-        let item = ClipboardItem(kind: .data, fileURL: fileURL, contentHash: hash)
-
-        if let thumbnail = item.generateThumbnail(),
-           let tiffData = thumbnail.tiffRepresentation,
-           let bitmap = NSBitmapImageRep(data: tiffData),
-           let pngData = bitmap.representation(using: .png, properties: [:]) {
-            item.thumbnailFileURL = writeToTempFile(pngData, suffix: fileExtension)
+ 
+    convenience init(value: ClipboardItemValue, fileExtension: String = "bin") throws {
+        switch value {
+        case .string(let text):
+            self.init(text: text)
+        case .data(let data):
+            try self.init(data: data, fileExtension: fileExtension)
         }
+    }
 
-        return item
+
+    // #################
+    // #   Computed    #
+    // #################
+    var isPinned: Bool { pinInfo != nil }
+    
+   var storageDirectory: URL { isPinned ? StorageLocation.persistent : StorageLocation.temp }
+
+   var fileURL: URL? { fileName.map { storageDirectory.appending(path: $0) } }
+   var thumbnailFileURL: URL? { thumbnailFileName.map { storageDirectory.appending(path: $0) } }
+
+   var asString: String? { stringValue }
+
+   var asData: Data? {
+       guard kind == .data, let fileURL else { return nil }
+       return try? Data(contentsOf: fileURL)
+   }
+
+   var cachedThumbnail: NSImage? {
+       guard let thumbnailFileURL else { return nil }
+       return NSImage(contentsOf: thumbnailFileURL)
+   }
+
+   var fileNames: [String] { [fileName, thumbnailFileName].compactMap { $0 } }
+
+    // ##############
+    // #   Funcs    #
+    // ##############
+    
+    
+    func pin(sortOrder: Int = 0) throws {
+        guard !isPinned else { return }
+        try ClipboardFileStorage.move(
+            fileNames, from: StorageLocation.temp, to: StorageLocation.persistent
+        )
+        pinInfo = PinInfo(sortOrder: sortOrder)
+    }
+    func unpin(in context: ModelContext) throws {
+        guard let info = pinInfo else { return }
+        try ClipboardFileStorage.move(
+            fileNames, from: StorageLocation.persistent, to: StorageLocation.temp
+        )
+        pinInfo = nil
+        context.delete(info)
     }
     
-    var asString: String? {
-        stringValue
+    func remove(from context: ModelContext) {
+        deleteAssociatedFiles()
+        context.delete(self)
     }
-    
-    var asData: Data? {
-        guard kind == .data, let fileURL else { return nil }
-        return try? Data(contentsOf: fileURL)
-    }
-    
-    /// Kleine, gecachte Vorschau — günstig für die Listenanzeige
-    var cachedThumbnail: NSImage? {
-        guard let thumbnailFileURL else { return nil }
-        return NSImage(contentsOf: thumbnailFileURL)
-    }
-    
+ 
     func deleteAssociatedFiles() {
-        if let fileURL {
-            try? FileManager.default.removeItem(at: fileURL)
-        }
-        if let thumbnailFileURL {
-            try? FileManager.default.removeItem(at: thumbnailFileURL)
-        }
+        if let fileURL { try? FileManager.default.removeItem(at: fileURL) }
+        if let thumbnailFileURL { try? FileManager.default.removeItem(at: thumbnailFileURL) }
     }
     
-    private func generateThumbnail(maxDimension: CGFloat = 120) -> NSImage? {
-        guard let fileURL,
-              let imageSource = CGImageSourceCreateWithURL(fileURL as CFURL, nil) else {
-            return nil
+    @MainActor static func startupCleanup(in context: ModelContext) throws {
+            let unpinned = try context.fetch(
+                FetchDescriptor<ClipboardItem>(predicate: #Predicate { $0.pinInfo == nil })
+            )
+     
+            var validNames = Set<String>()
+            for item in unpinned {
+                if item.kind == .data, let url = item.fileURL,
+                   !FileManager.default.fileExists(atPath: url.path) {
+                    item.remove(from: context)
+                } else {
+                    validNames.formUnion(item.fileNames)
+                }
+            }
+            try context.save()
+     
+            guard let files = try? FileManager.default.contentsOfDirectory(
+                at: StorageLocation.temp, includingPropertiesForKeys: nil
+            ) else { return }
+     
+            for file in files where !validNames.contains(file.lastPathComponent) {
+                try? FileManager.default.removeItem(at: file)
+            }
         }
-
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceThumbnailMaxPixelSize: maxDimension,
-            kCGImageSourceCreateThumbnailWithTransform: true
-        ]
-
-        guard let cgThumbnail = CGImageSourceCreateThumbnailAtIndex(
-            imageSource, 0, options as CFDictionary
-        ) else {
-            return nil
-        }
-
-        return NSImage(cgImage: cgThumbnail, size: .zero)
-    }
-    
-    private static func writeToTempFile(_ data: Data, suffix: String) -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("PasteClipboardData", isDirectory: true)
-
-        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-        let fileURL = tempDir.appendingPathComponent("\(UUID().uuidString).\(suffix)")
-        try? data.write(to: fileURL)
-        return fileURL
-    }
-
-    static func cleanupOrphanedFiles(keeping validItems: [ClipboardItem]) {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("PasteClipboardData", isDirectory: true)
-
-        guard let files = try? FileManager.default.contentsOfDirectory(
-            at: tempDir, includingPropertiesForKeys: nil
-        ) else { return }
-
-        let validPaths = Set(validItems.flatMap { [$0.fileURL, $0.thumbnailFileURL].compactMap { $0 } })
-
-        for file in files where !validPaths.contains(file) {
-            try? FileManager.default.removeItem(at: file)
-        }
-    }
-    
 }
 
 

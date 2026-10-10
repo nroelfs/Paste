@@ -6,9 +6,16 @@
 //
 
 struct GeneralConfiguration : Codable {
+    
+    // ##############
+    // #   Props    #
+    // ##############
     var capacity : Int = 10
     var autostart : Bool = false
     
+    // #############
+    // #   Ctor    #
+    // #############
     init(){}
     
     init(from decoder: Decoder) throws {
