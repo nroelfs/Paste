@@ -142,7 +142,6 @@ final class ClipboardItem: Identifiable {
         return fileURL
     }
 
-    /// Beim App-Start aufrufen, um Dateien von abgestürzten/hart beendeten Sessions zu entfernen
     static func cleanupOrphanedFiles(keeping validItems: [ClipboardItem]) {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("PasteClipboardData", isDirectory: true)

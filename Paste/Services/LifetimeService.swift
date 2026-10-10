@@ -70,6 +70,11 @@ final class LifetimeService{
         wakeWorker()
     }
     
+    func remove(id: UUID){
+        queue.removeAll { $0.id == id }
+        wakeWorker()
+    }
+    
     func updateConfig(_ config: ClipboardLifeTimeConfiguration) {
         lifeTimeConfiguration = config
         for index in queue.indices {

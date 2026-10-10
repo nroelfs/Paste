@@ -27,11 +27,14 @@ struct PasteApp: App {
         do {
             configStore = try ConfigurationStore()
             let configuartion = try configStore.load()
-            let store = ClipboardStore(configuration: configuartion)
             let monitor = ClipboardMonitoringService()
             let hotkey = GlobalHotkeyService()
-            let panel = ClipboardPanelService(store: store)
             let lifetime = LifetimeService(configuartion.clipboardLifeTime)
+            
+            let store = ClipboardStore(configuration: configuartion, postDeleteAction:{ id in
+                    
+            })
+            let panel = ClipboardPanelService(store: store)
             
             let directoryWatcher = DirectoryWatcher(path: configStore.configDir.path()) {
                 do {

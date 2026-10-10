@@ -17,20 +17,22 @@ final class ClipboardStore {
     // #   Props    #
     // ##############
     private(set) var items: [ClipboardItem] = []
+    private(set) var pinned: [ClipboardItem] = []
     private(set) var capacity: Int
     private(set) var activeItemId: UUID? = nil
-    
+    var postDeleteAction:(UUID) -> Void
     // #############
     // #   Ctor    #
     // #############
-    init(capacity: Int = 10) {
+    init(capacity: Int = 10, postDeleteAction: @escaping (UUID) -> Void) {
         self.capacity = capacity
+        self.postDeleteAction = postDeleteAction
     }
     
-    init(configuration: Configuration) {
+    init(configuration: Configuration, postDeleteAction: @escaping (UUID) -> Void) {
         self.capacity = configuration.general.capacity
+        self.postDeleteAction = postDeleteAction
     }
-    
     
     // #################
     // #   Computed    #
@@ -88,7 +90,7 @@ final class ClipboardStore {
         if activeItemId == id {
             activeItemId = items.first?.id
         }
-
+        postDeleteAction(id)
         return removedItem
     }
     
@@ -100,7 +102,10 @@ final class ClipboardStore {
             let removedItems = items.suffix(removeCount)
 
             items.removeLast(removeCount)
-            removedItems.forEach { $0.deleteAssociatedFiles() }
+            removedItems.forEach {
+                $0.deleteAssociatedFiles()
+                postDeleteAction($0.id)
+            }
 
             if let activeItemId, removedItems.contains(where: { $0.id == activeItemId }) {
                 self.activeItemId = items.first?.id
