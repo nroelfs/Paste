@@ -22,7 +22,9 @@ struct PasteApp: App {
 
     
     init() {
-        let container = Self.createModelContainer()
+        let container: ModelContainer = {
+            try! ModelContainer(for: ClipboardItem.self, PinInfo.self)
+        }()
         let configStore: ConfigurationStore
         do {
             configStore = try ConfigurationStore()
@@ -52,6 +54,7 @@ struct PasteApp: App {
             self.directoryWatcher = directoryWatcher
             
             try ClipboardItem.startupCleanup(in: sharedModelContainer.mainContext)
+            store.loadPinned(from: sharedModelContainer.mainContext)
             
             _lifetimeService = State(initialValue: lifetime)
             _store = State(initialValue: store)
@@ -109,7 +112,8 @@ struct PasteApp: App {
 
     private static func createModelContainer() -> ModelContainer {
         let schema = Schema([
-            ClipboardItem.self
+            ClipboardItem.self,
+            PinInfo.self
         ])
 
         let configuration = ModelConfiguration(

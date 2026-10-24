@@ -34,7 +34,7 @@ struct ClipboardHistory: View {
     }
     
     @MainActor private func pinItem(id: UUID){
-        store.pinItem(id: id)
+        store.pinItem(id: id, in: modelContext)
     }
     
     
@@ -66,9 +66,9 @@ struct ClipboardHistory: View {
                                 ContextMenuButton(title: "Remove", systemImage: "trash", role: .destructive) {
                                     removeItem(id: item.id)
                                 }
-                                ContextMenuButton(title: "Pin", systemImage: "pin") {
-                                    pinItem(id: item.id)
-                                }
+                                // ContextMenuButton(title: "Pin", systemImage: "pin") {
+                                //    pinItem(id: item.id)
+                                // }
                             }
                         }
                     }
@@ -81,6 +81,14 @@ struct ClipboardHistory: View {
                                     ClipboardItemRow(item: pin,
                                                      selectAction: selectItem,
                                                      active: pin.id == store.activeItemId)
+                                    .contextMenu {
+                                        ContextMenuButton(title: "unpin", systemImage: "pin.slash", role: .destructive) {
+                                            store.unPinItem(id: pin.id)
+                                        }
+                                        ContextMenuButton(title: "remove", systemImage: "trash") {
+                                            pinItem(id: pin.id)
+                                        }
+                                    }
                                 }
                             }
                     }

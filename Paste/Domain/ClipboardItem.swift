@@ -94,6 +94,7 @@ final class ClipboardItem: Identifiable {
         )
         pinInfo = PinInfo(sortOrder: sortOrder)
     }
+    
     func unpin(in context: ModelContext) throws {
         guard let info = pinInfo else { return }
         try ClipboardFileStorage.move(
@@ -114,29 +115,29 @@ final class ClipboardItem: Identifiable {
     }
     
     @MainActor static func startupCleanup(in context: ModelContext) throws {
-            let unpinned = try context.fetch(
-                FetchDescriptor<ClipboardItem>(predicate: #Predicate { $0.pinInfo == nil })
-            )
-     
-            var validNames = Set<String>()
-            for item in unpinned {
-                if item.kind == .data, let url = item.fileURL,
-                   !FileManager.default.fileExists(atPath: url.path) {
-                    item.remove(from: context)
-                } else {
-                    validNames.formUnion(item.fileNames)
-                }
-            }
-            try context.save()
-     
-            guard let files = try? FileManager.default.contentsOfDirectory(
-                at: StorageLocation.temp, includingPropertiesForKeys: nil
-            ) else { return }
-     
-            for file in files where !validNames.contains(file.lastPathComponent) {
-                try? FileManager.default.removeItem(at: file)
+        let unpinned = try context.fetch(
+            FetchDescriptor<ClipboardItem>(predicate: #Predicate { $0.pinInfo == nil })
+        )
+ 
+        var validNames = Set<String>()
+        for item in unpinned {
+            if item.kind == .data, let url = item.fileURL,
+               !FileManager.default.fileExists(atPath: url.path) {
+                item.remove(from: context)
+            } else {
+                validNames.formUnion(item.fileNames)
             }
         }
+        try context.save()
+ 
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: StorageLocation.temp, includingPropertiesForKeys: nil
+        ) else { return }
+ 
+        for file in files where !validNames.contains(file.lastPathComponent) {
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
 }
 
 
