@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    tags: ["v*"]        # baut bei Tags wie v0.1.0
+  workflow_dispatch:     # oder manuell per Button
+
+permissions:
+  contents: write        # nötig, um ein Release anzulegen
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode-Version anzeigen
+        run: xcodebuild -version
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project Paste.xcodeproj \
+            -scheme Paste \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Ad-hoc sign and zip
+        run: |
+          APP="build/Build/Products/Release/Paste.app"
+          codesign --force --deep --sign - "$APP"
+          ditto -c -k --keepParent "$APP" Paste.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Paste
+          path: Paste.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Paste.zip
