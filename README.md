@@ -14,3 +14,13 @@ xattr -cr Paste.app          # remove quarantine flag
 mv Paste.app /Applications/
 ```
 
+## Configuration
+The configuration is located in the directory `~/.config/apizzacomp/paste.toml`
+
+### clipboardLifeTime Section
+These settings specify how long entries are stored in the clipboard. `kind` specifies the unit; the default is `hours`. You can switch between `minutes`, `seconds`, and `hours`. `timespan` specifies the exact duration; the default is `36`.
+
+### general section
+`autostart` specifies whether the app should start automatically. `capacity` specifies how many entries can be stored.
+
+Translated with DeepL.com (free version)
