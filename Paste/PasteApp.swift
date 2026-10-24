@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nicklas Roelfs
+// Licensed under the PolyForm Shield License 1.0.0
+
 //
 //  PasteApp.swift
 //  Paste
@@ -22,16 +25,21 @@ struct PasteApp: App {
 
     
     init() {
-        let container = Self.createModelContainer()
+        let container: ModelContainer = {
+            try! ModelContainer(for: ClipboardItem.self, PinInfo.self)
+        }()
         let configStore: ConfigurationStore
         do {
             configStore = try ConfigurationStore()
             let configuartion = try configStore.load()
-            let store = ClipboardStore(configuration: configuartion)
             let monitor = ClipboardMonitoringService()
             let hotkey = GlobalHotkeyService()
-            let panel = ClipboardPanelService(store: store)
             let lifetime = LifetimeService(configuartion.clipboardLifeTime)
+            
+            let store = ClipboardStore(configuration: configuartion, postDeleteAction: { id in
+                lifetime.remove(id: id)
+            })
+            let panel = ClipboardPanelService(store: store)
             
             let directoryWatcher = DirectoryWatcher(path: configStore.configDir.path()) {
                 do {
@@ -42,11 +50,14 @@ struct PasteApp: App {
                 }
             }
             directoryWatcher.start()
-            ClipboardItem.cleanupOrphanedFiles(keeping: store.clipboard.items)
+            
             
             self.sharedModelContainer = container
             self.panelController = panel
             self.directoryWatcher = directoryWatcher
+            
+            try ClipboardItem.startupCleanup(in: sharedModelContainer.mainContext)
+            store.loadPinned(from: sharedModelContainer.mainContext)
             
             _lifetimeService = State(initialValue: lifetime)
             _store = State(initialValue: store)
@@ -56,13 +67,13 @@ struct PasteApp: App {
             
             
             lifetime.start(onEntryExpire: { id in
-                store.clipboard.remove(id: id)
+                store.remove(id: id)
             })
             
             monitor.start{ value in
-                let item = ClipboardItem.create(value: value)
+                let item = ClipboardItem(text: value)
 
-                store.clipboard.push(
+                store.push(
                     item,
                     into: container.mainContext
                 )
@@ -70,13 +81,13 @@ struct PasteApp: App {
                 
                 
             } onClipboardChangeData: { data, ext in
-                let item = ClipboardItem.create(value: data, fileExtension: ext)
-
-                store.clipboard.push(
-                    item,
-                    into: container.mainContext
-                )
-                lifetime.schedule(id: item.id, createdAt: item.createdAt)
+                do {
+                    let item = try ClipboardItem(data: data, fileExtension: ext)
+                    store.push(item, into: container.mainContext)
+                    lifetime.schedule(id: item.id, createdAt: item.createdAt)
+                } catch {
+                    print("Clipboard-Eintrag konnte nicht gespeichert werden: \(error)")
+                }
             }
             
             hotkey.register {
@@ -104,8 +115,8 @@ struct PasteApp: App {
 
     private static func createModelContainer() -> ModelContainer {
         let schema = Schema([
-            Clipboard.self,
-            ClipboardItem.self
+            ClipboardItem.self,
+            PinInfo.self
         ])
 
         let configuration = ModelConfiguration(

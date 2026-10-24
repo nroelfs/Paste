@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nicklas Roelfs
+// Licensed under the PolyForm Shield License 1.0.0
+
 //
 //  Configuration.swift
 //  Paste
@@ -6,13 +9,17 @@
 //
 import TOMLKit
 
-
-
 struct Configuration : Codable{
     
+    // ##############
+    // #   Props    #
+    // ##############
     var general : GeneralConfiguration = GeneralConfiguration()
     var clipboardLifeTime : ClipboardLifeTimeConfiguration = ClipboardLifeTimeConfiguration()
     
+    // #############
+    // #   Ctor    #
+    // #############
     init(){}
     
     init(from decoder: Decoder) throws {

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nicklas Roelfs
+// Licensed under the PolyForm Shield License 1.0.0
+
 //
 //  ClipboardLifetime.swift
 //  Paste
@@ -7,16 +10,17 @@
 
 import Foundation
 
-enum ClipboardLifetimeKind: String, Codable {
-    case hours
-    case minutes
-    case seconds
-}
-
 struct ClipboardLifeTimeConfiguration : Codable {
+    
+    // ##############
+    // #   Props    #
+    // ##############
     var timespan : Int = 36
     var kind : ClipboardLifetimeKind = .hours
     
+    // #############
+    // #   Ctor    #
+    // #############
     init() {}
     
     init(from decoder: Decoder) throws {

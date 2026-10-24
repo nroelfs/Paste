@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nicklas Roelfs
+// Licensed under the PolyForm Shield License 1.0.0
+
 //
 //  LifetimeService.swift
 //  Paste
@@ -60,13 +63,23 @@ final class LifetimeService{
         for entry in expired {
             onEntryExpire?(entry.id)
         }
-        queue.removeFirst(expired.count)
+        if queue.count >= expired.count {
+            queue.removeFirst(expired.count)
+        }
+        else if queue.count < expired.count {
+            queue.removeAll()
+        }
     }
     
     func schedule(id: UUID, createdAt: Date) {
         let expiresAt = lifeTimeConfiguration.expirationDate( from: createdAt )!
         queue.append( LifetimeEntry( id: id, expiresAt: expiresAt, createdAt: createdAt ) )
         sortQueue()
+        wakeWorker()
+    }
+    
+    func remove(id: UUID){
+        queue.removeAll { $0.id == id }
         wakeWorker()
     }
     

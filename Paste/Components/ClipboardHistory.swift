@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nicklas Roelfs
+// Licensed under the PolyForm Shield License 1.0.0
+
 //
 //  ClipboardHistory.swift
 //  Paste
@@ -15,11 +18,11 @@ struct ClipboardHistory: View {
     
     
     private func selectItem(_ id: UUID) {
-        let oldActiveId = store.clipboard.activeItemId
+        let oldActiveId = store.activeItemId
 
-        guard store.clipboard.activate(id: id), let active = store.clipboard.active else {
+        guard store.activate(id: id), let active = store.active else {
             if let oldActiveId {
-                store.clipboard.activate(id: oldActiveId)
+                store.activate(id: oldActiveId)
             }
             return
         }
@@ -30,13 +33,17 @@ struct ClipboardHistory: View {
     
     
     @MainActor private func removeItem(id: UUID){
-        store.clipboard.remove(id: id)
+        store.remove(id: id)
+    }
+    
+    @MainActor private func pinItem(id: UUID){
+        store.pinItem(id: id, in: modelContext)
     }
     
     
     var body: some View {
         ZStack{
-            if store.clipboard.isEmpty {
+            if store.isEmpty && store.pinned.count <= 0{
                 HStack{
                     VStack(spacing: 12) {
                         Image(systemName: "list.clipboard")
@@ -53,12 +60,39 @@ struct ClipboardHistory: View {
 
             } else {
                 List {
-                    ForEach(store.clipboard.items, id: \.id) { item in
-                        ClipboardItemRow(item: item,
-                                         selectAction: selectItem,
-                                         active: item.id == store.clipboard.activeItemId)
+                    Section {
+                        ForEach(store.items, id: \.id) { item in
+                            ClipboardItemRow(item: item,
+                                             selectAction: selectItem,
+                                             active: item.id == store.activeItemId)
                             .contextMenu {
-                                Button("Remove",systemImage: "trash", role: .destructive, action: {removeItem(id: item.id)})
+                                ContextMenuButton(title: "Remove", systemImage: "trash", role: .destructive) {
+                                    removeItem(id: item.id)
+                                }
+                                // ContextMenuButton(title: "Pin", systemImage: "pin") {
+                                //    pinItem(id: item.id)
+                                // }
+                            }
+                        }
+                    }
+                    
+                    if !store.pinned.isEmpty {
+                        Section(header: Text("Pins")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))) {
+                                ForEach(store.pinned, id: \.id) { pin in
+                                    ClipboardItemRow(item: pin,
+                                                     selectAction: selectItem,
+                                                     active: pin.id == store.activeItemId)
+                                    .contextMenu {
+                                        ContextMenuButton(title: "unpin", systemImage: "pin.slash", role: .destructive) {
+                                            store.unPinItem(id: pin.id)
+                                        }
+                                        ContextMenuButton(title: "remove", systemImage: "trash") {
+                                            pinItem(id: pin.id)
+                                        }
+                                    }
+                                }
                             }
                     }
                 }
@@ -76,39 +110,37 @@ struct ClipboardHistory: View {
 
 #if DEBUG
 @MainActor
-private func makePreviewStore(withItems: Bool) -> ClipboardStore {
-    let container = try! ModelContainer(
+private enum PreviewData {
+    /// static let hält den Container für die gesamte Lebenszeit der Preview am Leben
+    static let container = try! ModelContainer(
         for: ClipboardItem.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
-    let context = container.mainContext
-    let store = ClipboardStore(capacity: 10)
 
-    if withItems {
-        let item1 = ClipboardItem.create(value: "Hello World")
-        let item2 = ClipboardItem.create(value: "SwiftData")
-        let item3 = ClipboardItem.create(value: "Clipboard Test")
+    static func makeStore(withItems: Bool) -> ClipboardStore {
+        let context = container.mainContext
+        let store = ClipboardStore(capacity: 10, postDeleteAction: { _ in })
 
-        context.insert(item1)
-        context.insert(item2)
-        context.insert(item3)
-
-        store.clipboard.push(item1, into: context)
-        store.clipboard.push(item2, into: context)
-        store.clipboard.push(item3, into: context)
+        if withItems {
+            for text in ["Hello World", "SwiftData", "Clipboard Test"] {
+                let item = ClipboardItem(text: text)
+                context.insert(item)
+                store.push(item, into: context)
+            }
+        }
+        return store
     }
-
-    return store
 }
 
 #Preview("Items Not Loaded") {
-    ClipboardHistory(store: makePreviewStore(withItems: false), hideAction: { })
+    ClipboardHistory(store: PreviewData.makeStore(withItems: false), hideAction: { })
+        .modelContainer(PreviewData.container)
 }
 
 #Preview("Items Loaded") {
-    ClipboardHistory(store: makePreviewStore(withItems: true), hideAction: { })
+    ClipboardHistory(store: PreviewData.makeStore(withItems: true), hideAction: { })
+        .modelContainer(PreviewData.container)
 }
-
 #endif
 
 

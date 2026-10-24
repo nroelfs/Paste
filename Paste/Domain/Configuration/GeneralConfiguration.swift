@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nicklas Roelfs
+// Licensed under the PolyForm Shield License 1.0.0
+
 //
 //  General.swift
 //  Paste
@@ -6,9 +9,16 @@
 //
 
 struct GeneralConfiguration : Codable {
+    
+    // ##############
+    // #   Props    #
+    // ##############
     var capacity : Int = 10
     var autostart : Bool = false
     
+    // #############
+    // #   Ctor    #
+    // #############
     init(){}
     
     init(from decoder: Decoder) throws {
